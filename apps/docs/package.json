@@ -1,0 +1,22 @@
+{
+  "name": "@fetch-ui/docs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fetch UI Documentation",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
+    "clean": "rimraf .vitepress/dist"
+  },
+  "dependencies": {
+    "fetch-ui": "workspace:*",
+    "@fetch-ui/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0",
+    "vue": "^3.4.0",
+    "rimraf": "^5.0.0"
+  }
+}
