@@ -2,6 +2,7 @@
   "name": "fetch-ui",
   "version": "1.0.0",
   "description": "Fetch UI CLI Tool",
+  "type": "module",
   "main": "dist/index.js",
   "bin": {
     "fetch-ui": "./bin/fetch-ui.js"

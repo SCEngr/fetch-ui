@@ -10,9 +10,6 @@ importers:
 
   apps/docs:
     dependencies:
-      '@fetch-ui/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       fetch-ui:
         specifier: workspace:*
         version: link:../../packages/cli
@@ -23,6 +20,9 @@ importers:
       vitepress:
         specifier: ^1.0.0
         version: 1.5.0(@algolia/client-search@5.18.0)(@types/node@22.10.3)(postcss@8.4.49)(search-insights@2.17.3)(typescript@5.7.2)
+      vue:
+        specifier: ^3.4.0
+        version: 3.5.13(typescript@5.7.2)
 
   packages/cli:
     dependencies:
@@ -44,10 +44,6 @@ importers:
         version: 5.7.2
 
   packages/core:
-    dependencies:
-      fetch-ui:
-        specifier: workspace:*
-        version: link:../cli
     devDependencies:
       jest:
         specifier: ^29.0.0

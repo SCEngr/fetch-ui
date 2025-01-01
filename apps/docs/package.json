@@ -11,8 +11,7 @@
     "clean": "rimraf .vitepress/dist"
   },
   "dependencies": {
-    "fetch-ui": "workspace:*",
-    "@fetch-ui/core": "workspace:*"
+    "fetch-ui": "workspace:*"
   },
   "devDependencies": {
     "vitepress": "^1.0.0",
