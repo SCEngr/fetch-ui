@@ -716,47 +716,48 @@ fetch-ui registry [action] [options]
 
 #### Actions:
 
-1. Add Registry:
-
+1. Configure Registry:
    ```bash
-   fetch-ui registry add <name> <url>
+   fetch-ui registry config <url>
    ```
 
-2. Remove Registry:
-
+2. Self-Host Registry:
    ```bash
-   fetch-ui registry remove <name>
+   fetch-ui registry serve [options]
    ```
 
-3. List Registries:
-
+3. View Registry Status:
    ```bash
-   fetch-ui registry list
-   ```
-
-4. Set Default:
-   ```bash
-   fetch-ui registry default <name>
+   fetch-ui registry status
    ```
 
 #### Registry Configuration:
 
-````typescript
+```typescript
 interface RegistryConfig {
-  registries: {
-    [name: string]: {
-      url: string;
-      priority: number;
-      auth?: {
-        type: 'token' | 'basic';
-        token?: string;
-        username?: string;
-        password?: string;
-      };
+  endpoint: string;  // Registry API endpoint
+  auth?: {
+    type: "apiKey" | "bearer";
+    token?: string;
+  };
+  selfHosted?: {
+    port: number;
+    host: string;
+    storage: {
+      type: "fs" | "s3" | "azure";
+      config: Record<string, string>;
     };
   };
-  defaultRegistry: string;
 }
+```
+
+#### Self-Hosting Options:
+
+- `--port <number>`: Server port (default: 3000)
+- `--host <string>`: Host address (default: localhost)
+- `--storage <type>`: Storage type (fs/s3/azure)
+- `--storage-config <json>`: Storage configuration
+- `--auth <type>`: Authentication type (none/apiKey/bearer)
 
 ## Error Handling
 
@@ -778,7 +779,7 @@ interface CliError {
   details?: unknown;
   suggestion?: string;
 }
-````
+```
 
 ### 2. Error Handling Strategy
 
@@ -871,243 +872,135 @@ interface ComponentConfig {
 
 ## Registry API Specification
 
-### 1. Component Registry
+### 1. OpenAPI Definition
+
+The registry API follows OpenAPI 3.0 specification. The complete OpenAPI schema is available at `/openapi.json`.
+
+### 2. Core Endpoints
 
 ```typescript
 interface RegistryAPI {
-  // List all components
+  // Registry Information
+  GET /: {
+    version: string;
+    name: string;
+    description: string;
+    maintainers: string[];
+  };
+
+  // Component Operations
   GET /components: {
     components: Component[];
+    pagination: {
+      total: number;
+      page: number;
+      pageSize: number;
+    };
   };
 
-  // Get component details
   GET /components/:name: Component;
-
-  // Get component versions
-  GET /components/:name/versions: {
-    versions: string[];
-  };
-
-  // Get component source
+  GET /components/:name/versions: string[];
   GET /components/:name/:version: ComponentSource;
-}
-```
 
-### 2. Style Registry
-
-```typescript
-interface StyleAPI {
-  // List all styles
-  GET /styles: {
-    styles: Style[];
+  // Registry Management (Self-Hosted Only)
+  POST /components: {
+    name: string;
+    version: string;
+    files: ComponentFile[];
   };
-
-  // Get style details
-  GET /styles/:name: Style;
-
-  // Get component in style
-  GET /styles/:style/:component: ComponentSource;
+  
+  DELETE /components/:name/:version: void;
+  
+  // Registry Health
+  GET /health: {
+    status: "healthy" | "degraded" | "unhealthy";
+    details: {
+      storage: boolean;
+      cache: boolean;
+      database: boolean;
+    };
+  };
 }
-```
 
-## Future Enhancements
-
-1. Registry Features:
-
-   - Component versioning
-   - Component previews
-   - Custom transformers
-   - Registry authentication
-   - Component search and filtering
-
-2. CLI Features:
-   - Component updates
-   - Dependency management
-   - Interactive component configuration
-   - Component scaffolding
-   - Custom templates
-
-## Component Publishing
-
-### 1. Publish Command
-
-```bash
-npx fetch-ui publish [component] [options]
-```
-
-#### Options:
-
-- `--registry <url>`: Target registry URL
-- `--version <version>`: Component version
-- `--access <public|private>`: Access level
-- `--tag <tag>`: Version tag
-
-#### Publishing Process:
-
-```typescript
-interface PublishConfig {
+interface Component {
   name: string;
   version: string;
-  files: string[];
+  description: string;
+  author: string;
+  license: string;
   dependencies: {
-    npm: string[];
-    components: string[];
+    [name: string]: string; // version
   };
-  validation: {
-    rules: ValidationRule[];
-    tests: TestSpec[];
-  };
-}
-```
-
-## Version Management
-
-### 1. Version Rules
-
-- Follows Semantic Versioning (SemVer)
-- Version format: MAJOR.MINOR.PATCH
-- Pre-release tags: alpha, beta, rc
-
-### 2. Version Upgrade Strategy
-
-```typescript
-interface VersionUpgrade {
-  type: "major" | "minor" | "patch";
-  changes: {
-    breaking: boolean;
-    features: string[];
-    fixes: string[];
-  };
-  migration?: {
-    from: string;
-    to: string;
-    steps: string[];
-  };
-}
-```
-
-## Component Validation
-
-### 1. Validation Rules
-
-```typescript
-interface ValidationRule {
-  type: "structure" | "style" | "typescript" | "dependency";
-  check: (component: Component) => Promise<boolean>;
-  message: string;
-}
-```
-
-### 2. Test Specifications
-
-```typescript
-interface TestSpec {
-  name: string;
-  type: "unit" | "integration" | "e2e";
-  runner: "jest" | "vitest";
   files: string[];
-}
-```
-
-## Migration Guide
-
-### 1. From Other Libraries
-
-```typescript
-interface MigrationSource {
-  type: "shadcn" | "material-ui" | "antd";
-  version: string;
-  components: {
-    source: string;
-    target: string;
-    transforms: TransformRule[];
-  }[];
-}
-```
-
-### 2. Compatibility Layer
-
-```typescript
-interface CompatibilityLayer {
-  source: string;
-  adapters: {
-    [key: string]: (props: any) => JSX.Element;
-  };
-  styles: {
-    [key: string]: string;
+  metadata: {
+    tags: string[];
+    category: string;
+    framework: string;
+    preview?: string;
   };
 }
-```
 
-## Dependencies
-
-### 1. Core Dependencies
-
-```json
-{
-  "dependencies": {
-    "tailwindcss": "^3.0.0",
-    "typescript": "^5.0.0",
-    "ts-morph": "^19.0.0",
-    "commander": "^11.0.0",
-    "zod": "^3.0.0"
-  }
+interface ComponentFile {
+  path: string;
+  content: string;
+  hash: string;
 }
 ```
 
-### 2. Compatibility Matrix
-
-| Library     | Version Range | Status     |
-| ----------- | ------------- | ---------- |
-| shadcn-ui   | ^0.5.0        | Compatible |
-| tailwindcss | ^3.0.0        | Required   |
-| React       | ^18.0.0       | Required   |
-
-## Registry API Security
-
-### 1. Authentication
+### 3. Self-Hosting Configuration
 
 ```typescript
-interface AuthSpec {
-  type: "bearer" | "oauth2" | "apikey";
-  endpoints: {
-    token: string;
-    refresh: string;
-    revoke: string;
+interface RegistryConfig {
+  server: {
+    port: number;
+    host: string;
+    baseUrl: string;
   };
-  scopes: {
-    read: string[];
-    write: string[];
+  storage: {
+    type: "fs" | "s3" | "azure";
+    config: {
+      // Storage-specific configuration
+      path?: string;      // for fs
+      bucket?: string;    // for s3
+      container?: string; // for azure
+    };
+  };
+  auth: {
+    type: "none" | "basic" | "jwt";
+    config: {
+      // Auth-specific configuration
+      secret?: string;
+      tokenExpiry?: number;
+    };
+  };
+  cache: {
+    type: "memory" | "redis";
+    ttl: number;
+    config: {
+      // Cache-specific configuration
+      url?: string;
+      maxSize?: number;
+    };
   };
 }
 ```
 
-### 2. Rate Limiting
+### 4. Security
 
-```typescript
-interface RateLimit {
-  window: number; // Time window in seconds
-  max: number; // Maximum requests per window
-  strategy: "sliding" | "fixed";
-  headers: {
-    limit: string;
-    remaining: string;
-    reset: string;
-  };
-}
-```
+1. Authentication:
+   - API Key based authentication
+   - JWT support for self-hosted instances
+   - Role-based access control for component publishing
 
-### 3. Error Responses
+2. Rate Limiting:
+   - Request rate limiting per API key
+   - Burst allowance configuration
+   - Different limits for read/write operations
 
-```typescript
-interface ApiError {
-  status: number;
-  code: string;
-  message: string;
-  details?: unknown;
-  retryAfter?: number;
-}
-```
+3. Data Validation:
+   - Schema validation for all requests
+   - Content validation for component files
+   - Size limits for package uploads
 
 ## Implementation Boundaries
 
@@ -1270,4 +1163,64 @@ interface CompatibilitySpec {
     };
   };
 }
+
 ```
+
+Follow these instructions to make the following change to my code document.
+
+Instruction: 修改 Registry Command 部分，使其更符合单一 OpenAPI Registry 的设计
+
+Code Edit:
+```
+{{ ... }}
+### 5. Registry Command
+
+```bash
+fetch-ui registry [action] [options]
+```
+
+#### Actions:
+
+1. Configure Registry:
+   ```bash
+   fetch-ui registry config <url>
+   ```
+
+2. Self-Host Registry:
+   ```bash
+   fetch-ui registry serve [options]
+   ```
+
+3. View Registry Status:
+   ```bash
+   fetch-ui registry status
+   ```
+
+#### Registry Configuration:
+
+```typescript
+interface RegistryConfig {
+  endpoint: string;  // Registry API endpoint
+  auth?: {
+    type: "apiKey" | "bearer";
+    token?: string;
+  };
+  selfHosted?: {
+    port: number;
+    host: string;
+    storage: {
+      type: "fs" | "s3" | "azure";
+      config: Record<string, string>;
+    };
+  };
+}
+```
+
+#### Self-Hosting Options:
+
+- `--port <number>`: Server port (default: 3000)
+- `--host <string>`: Host address (default: localhost)
+- `--storage <type>`: Storage type (fs/s3/azure)
+- `--storage-config <json>`: Storage configuration
+- `--auth <type>`: Authentication type (none/apiKey/bearer)
+{{ ... }}

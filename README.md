@@ -4,7 +4,8 @@ A modern UI component management system that allows you to fetch, manage, and us
 
 ## Features
 
-- 🚀 Multiple Registry Support: npm, git, local, and custom registries
+- 🚀 OpenAPI Registry: Standard OpenAPI specification for component registry
+- 🏠 Self-Hosted Support: Deploy and manage your own registry
 - 📦 Component Management: Install, update, and remove components
 - 🔍 Component Discovery: Search and browse components
 - 🛠 CLI Tool: Easy-to-use command line interface
